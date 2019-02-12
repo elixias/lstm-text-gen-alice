@@ -5,6 +5,7 @@ from keras.layers import Dropout
 from keras.layers import LSTM
 from keras.callbacks import ModelCheckpoint
 from keras.utils import np_utils
+from keras.optimizers import Adam
 
 # load ascii text and covert to lowercase
 filename = "wonderland.txt"
@@ -34,29 +35,43 @@ print("Total Patterns: ", n_patterns)
 
 # reshape X to be [samples, time steps, features]
 X = numpy.reshape(dataX, (n_patterns, seq_length, 1))
-print(dataX[0])
-print(X[0])
 # normalize
 X = X / float(n_vocab)
 # one hot encode the output variable
 y = np_utils.to_categorical(dataY)
 
 # define the LSTM model
-model = Sequential()
+"""model = Sequential()
 model.add(LSTM(256, input_shape=(X.shape[1], X.shape[2])))
 model.add(Dropout(0.2))
 model.add(Dense(y.shape[1], activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer='adam')
+"""
+model = Sequential()
+model.add(LSTM(50, input_shape=(X.shape[1], 1), return_sequences=True)) #X.shape[2]
+model.add(Dropout(0.2))
+model.add(LSTM(50, return_sequences=True))
+model.add(Dropout(0.2))
+model.add(LSTM(50, return_sequences=True))
+model.add(Dropout(0.2))
+model.add(LSTM(50))
+model.add(Dropout(0.2))
+model.add(Dense(y.shape[1], activation='softmax'))
+opt = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=1e-6, amsgrad=False)
+model.compile(loss='categorical_crossentropy', optimizer=opt)
 
 # define the checkpoint
 filepath="weights-improvement-{epoch:02d}-{loss:.4f}.hdf5"
 checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
 
-#model.fit(X, y, epochs=20, batch_size=128, callbacks=callbacks_list)
+print(X.shape)
+print(y.shape)
+
+model.fit(X, y, epochs=20, batch_size=128, callbacks=callbacks_list)
 
 # load the network weights
-filename = "weights-improvement-17-2.0350.hdf5"
+filename = "weights-improvement-01-2.9959.hdf5"
 model.load_weights(filename)
 model.compile(loss='categorical_crossentropy', optimizer='adam')
 
